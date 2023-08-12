@@ -50,6 +50,27 @@ in
 				userName  = "mburuwarui";
 				userEmail = "mburuwarui@gmail.com";
 			};
+		
+			  programs.vim = {
+			    enable = true;
+			    plugins = with pkgs.vimPlugins; [ vim-airline ];
+			    settings = { ignorecase = true; };
+			    extraConfig = ''
+			      set mouse=a
+			      set tabstop=2
+			      set shiftwidth=2
+			    '';
+			  };
+
+			  programs.neovim = {
+			    enable = true;
+			    plugins = with pkgs.vimPlugins; [ nvchad ];
+			    extraConfig = ''
+			      set mouse=a
+			      set tabstop=2
+			      set shiftwidth=2
+			    '';
+			  };
 
 
 		};
@@ -124,6 +145,10 @@ in
 
 	# Allow unfree packages
 	nixpkgs.config.allowUnfree = true;
+
+	nixpkgs.config.permittedInsecurePackages = [
+                "python-2.7.18.6"
+              ];
 
 	# List packages installed in system profile. To search, run:
 	# $ nix search wget
