@@ -5,7 +5,7 @@
 { config, pkgs, ... }:
 let
 	home-manager = builtins.fetchTarball "https://github.com/nix-community/home-manager/archive/release-23.05.tar.gz";
-  	p10kTheme = /home/blackstar/.p10k.zsh;
+  p10kTheme = /home/blackstar/.p10k.zsh;
 in
 {
 	imports =
@@ -18,8 +18,8 @@ in
 		/* The home.stateVersion option does not have a default and must be set */
 		home.stateVersion = "18.09";
 		/* Here goes the rest of your home-manager config, e.g. home.packages = [ pkgs.foo ]; */
-
-			programs.zsh = {
+			
+    programs.zsh = {
 				enable = true;
 				shellAliases = {
 					ll = "ls -l";
@@ -28,13 +28,19 @@ in
 				history = {
 					size = 10000;
 					path = "~/.local/share/zsh/history";
-				};
-				initExtra = ''
-      					[[ ! -f ${p10kTheme} ]] || source ${p10kTheme}
+        };
+         
+        initExtraBeforeCompInit = ''
+          # p10k instant prompt
+          P10K_INSTANT_PROMPT="$XDG_CACHE_HOME/p10k-instant-prompt-''${(%):-%n}.zsh"
+          [[ ! -r "$P10K_INSTANT_PROMPT" ]] || source "$P10K_INSTANT_PROMPT"
+        '';
+        initExtra = ''
+          [[ ! -f ${p10kTheme} ]] || source ${p10kTheme}
 					if type neofetch > /dev/null; then
    						 neofetch
- 				        fi
-   				 '';
+ 				  fi
+   		  '';
 				zplug = {
 					enable = true;
 					plugins = [
@@ -42,7 +48,8 @@ in
 						{ name = "romkatv/powerlevel10k"; tags = [ as:theme depth:1 ]; } # Installations with additional options. For the list of options, please refer to Zplug README.
 						{ name = "zdharma/fast-syntax-highlighting"; }
 					];
-				};
+        };
+
 			};
 
 			programs.git = {
@@ -51,26 +58,30 @@ in
 				userEmail = "mburuwarui@gmail.com";
 			};
 		
-			  programs.vim = {
-			    enable = true;
-			    plugins = with pkgs.vimPlugins; [ vim-airline ];
-			    settings = { ignorecase = true; };
-			    extraConfig = ''
-			      set mouse=a
-			      set tabstop=2
-			      set shiftwidth=2
-			    '';
-			  };
+      programs.vim = {
+        enable = true;
+        plugins = with pkgs.vimPlugins; [
+          vim-airline
+        ];
+        settings = { ignorecase = true; };
+        extraConfig = ''
+          set mouse=a
+          set tabstop=2
+          set shiftwidth=2
+        '';
+      };
 
-			  programs.neovim = {
-			    enable = true;
-			    plugins = with pkgs.vimPlugins; [ nvchad ];
-			    extraConfig = ''
-			      set mouse=a
-			      set tabstop=2
-			      set shiftwidth=2
-			    '';
-			  };
+      programs.neovim = {
+        enable = true;
+        plugins = with pkgs.vimPlugins; [
+          # nvchad
+        ];
+        extraConfig = ''
+          set mouse=a
+          set tabstop=2
+          set shiftwidth=2
+        '';
+      };
 
 
 		};
@@ -136,7 +147,7 @@ in
 	users.users.blackstar = {
 		isNormalUser = true;
 		description = "Blackstar";
-		extraGroups = [ "networkmanager" "wheel" ];
+		extraGroups = [ "networkmanager" "wheel" "docker" ];
 		packages = with pkgs; [
 			firefox
 		#  thunderbird
@@ -161,10 +172,16 @@ in
 		zsh
 		zplug
 		neofetch
-		nodejs_18
+		nodejs_20
 		nodePackages_latest.pnpm		
 		xclip
 		fontconfig
+    ntfs3g
+    ripgrep
+    gcc
+    k3s
+    k9s
+    unzip
 	];
 
 	# Some programs need SUID wrappers, can be configured further or are
@@ -178,7 +195,10 @@ in
 	# List services that you want to enable:
 
 	programs.zsh.enable = true;
-        users.defaultUserShell = pkgs.zsh;
+  users.defaultUserShell = pkgs.zsh;
+
+  #Virtualization
+  virtualisation.docker.enable = true;
 
 	fonts = {
 	    fonts = with pkgs; [
