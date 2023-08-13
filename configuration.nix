@@ -17,8 +17,8 @@ in
 		home-manager.users.blackstar = {
 		/* The home.stateVersion option does not have a default and must be set */
 		home.stateVersion = "18.09";
-		/* Here goes the rest of your home-manager config, e.g. home.packages = [ pkgs.foo ]; */
-			
+    /* Here goes the rest of your home-manager config, e.g. home.packages = [ pkgs.foo ]; */
+
     programs.zsh = {
 				enable = true;
 				shellAliases = {
@@ -62,6 +62,7 @@ in
         enable = true;
         plugins = with pkgs.vimPlugins; [
           vim-airline
+          suda-vim
         ];
         settings = { ignorecase = true; };
         extraConfig = ''
@@ -70,19 +71,6 @@ in
           set shiftwidth=2
         '';
       };
-
-      programs.neovim = {
-        enable = true;
-        plugins = with pkgs.vimPlugins; [
-          # nvchad
-        ];
-        extraConfig = ''
-          set mouse=a
-          set tabstop=2
-          set shiftwidth=2
-        '';
-      };
-
 
 		};
 
@@ -196,6 +184,8 @@ in
 
 	programs.zsh.enable = true;
   users.defaultUserShell = pkgs.zsh;
+
+  environment.variables.EDITOR = "nvim";
 
   #Virtualization
   virtualisation.docker.enable = true;
