@@ -12,6 +12,7 @@ in
 		[ # Include the results of the hardware scan.
 			./hardware-configuration.nix
 			(import "${home-manager}/nixos")
+      ./nix-alien.nix
 		];
 		
 		home-manager.users.blackstar = {
@@ -57,7 +58,13 @@ in
 				userName  = "mburuwarui";
 				userEmail = "mburuwarui@gmail.com";
 			};
-		
+	
+      programs.direnv = {
+        enable = true;
+        enableZshIntegration = true; # see note on other shells below
+        nix-direnv.enable = true;
+        };
+
       programs.vim = {
         enable = true;
         plugins = with pkgs.vimPlugins; [
@@ -146,6 +153,7 @@ in
 	nixpkgs.config.allowUnfree = true;
 
 	nixpkgs.config.permittedInsecurePackages = [
+                "openssl-1.1.1u"
                 "python-2.7.18.6"
               ];
 
@@ -156,6 +164,7 @@ in
 		wget
 		curl
 		git
+    gh
 		neovim
 		zsh
 		zplug
@@ -170,6 +179,8 @@ in
     k3s
     k9s
     unzip
+    openssl
+    direnv
 	];
 
 	# Some programs need SUID wrappers, can be configured further or are
@@ -182,6 +193,7 @@ in
 
 	# List services that you want to enable:
 
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 	programs.zsh.enable = true;
   users.defaultUserShell = pkgs.zsh;
 
@@ -220,6 +232,11 @@ in
 	# Or disable the firewall altogether.
 	# networking.firewall.enable = false;
 
+  # system upgrade
+  system.autoUpgrade.enable = true;  
+  system.autoUpgrade.allowReboot = true; 
+  system.autoUpgrade.channel = "https://channels.nixos.org/nixos-23.05";
+
 	# This value determines the NixOS release from which the default
 	# settings for stateful data, like file locations and database versions
 	# on your system were taken. It‘s perfectly fine and recommended to leave
@@ -228,7 +245,7 @@ in
 	# (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
 	system.stateVersion = "23.05"; # Did you read the comment?
 	
-	# Backup 
+	# config backup 
 	system.copySystemConfiguration = true;
 
 }
