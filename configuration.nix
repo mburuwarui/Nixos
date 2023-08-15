@@ -30,12 +30,6 @@ in
 					size = 10000;
 					path = "~/.local/share/zsh/history";
         };
-         
-        initExtraBeforeCompInit = ''
-          # p10k instant prompt
-          P10K_INSTANT_PROMPT="$XDG_CACHE_HOME/p10k-instant-prompt-''${(%):-%n}.zsh"
-          [[ ! -r "$P10K_INSTANT_PROMPT" ]] || source "$P10K_INSTANT_PROMPT"
-        '';
         initExtra = ''
           [[ ! -f ${p10kTheme} ]] || source ${p10kTheme}
 					if type neofetch > /dev/null; then
@@ -59,25 +53,12 @@ in
 				userEmail = "mburuwarui@gmail.com";
 			};
 	
+      # enable prisma dev environment using flakes   
       programs.direnv = {
         enable = true;
         enableZshIntegration = true; # see note on other shells below
         nix-direnv.enable = true;
         };
-
-      programs.vim = {
-        enable = true;
-        plugins = with pkgs.vimPlugins; [
-          vim-airline
-          suda-vim
-        ];
-        settings = { ignorecase = true; };
-        extraConfig = ''
-          set mouse=a
-          set tabstop=2
-          set shiftwidth=2
-        '';
-      };
 
 		};
 
@@ -159,7 +140,7 @@ in
 
 	# List packages installed in system profile. To search, run:
 	# $ nix search wget
-	environment.systemPackages = with pkgs; [
+	environment.systemPackages = (with pkgs; [
 		vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
 		wget
 		curl
@@ -181,7 +162,14 @@ in
     unzip
     openssl
     direnv
-	];
+    rustup
+    just
+    podman-tui
+]) ++ (with pkgs.gnomeExtensions; [
+    blur-my-shell
+    vitals
+    openweather
+  ]);
 
 	# Some programs need SUID wrappers, can be configured further or are
 	# started in user sessions.
@@ -192,15 +180,27 @@ in
 	# };
 
 	# List services that you want to enable:
-
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 	programs.zsh.enable = true;
   users.defaultUserShell = pkgs.zsh;
-
   environment.variables.EDITOR = "nvim";
 
   #Virtualization
-  virtualisation.docker.enable = true;
+  virtualisation = {
+    podman = {
+      enable = true;
+
+      # Create a `docker` alias for podman, to use it as a drop-in replacement
+      dockerCompat = true;
+
+      # Required for containers under podman-compose to be able to talk to each other.
+      defaultNetwork.settings.dns_enabled = true;
+      # For Nixos version > 22.11
+      #defaultNetwork.settings = {
+      #  dns_enabled = true;
+      #};
+    };
+  };
 
 	fonts = {
 	    fonts = with pkgs; [
@@ -232,7 +232,7 @@ in
 	# Or disable the firewall altogether.
 	# networking.firewall.enable = false;
 
-  # system upgrade
+  # system auto-upgrade
   system.autoUpgrade.enable = true;  
   system.autoUpgrade.allowReboot = true; 
   system.autoUpgrade.channel = "https://channels.nixos.org/nixos-23.05";
