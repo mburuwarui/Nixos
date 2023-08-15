@@ -185,7 +185,26 @@ in
   users.defaultUserShell = pkgs.zsh;
   environment.variables.EDITOR = "nvim";
 
-  #Virtualization
+  # Kubernetes k3s
+  # This is required so that pod can reach the API server (running on port 6443 by default)
+  networking.firewall.allowedTCPPorts = [ 6443 ];
+  services.k3s.enable = true;
+  services.k3s.role = "server";
+  services.k3s.extraFlags = toString [
+    # "--kubelet-arg=v=4" # Optionally add additional args to k3s
+  ];
+  # Required by the network policy controller. 
+  systemd.services.k3s.path = [ pkgs.ipset ];
+
+  # Export KUBECONFIG for K9s
+  environment.etc."profile".text = ''
+  export KUBECONFIG=~/.kube/config
+  mkdir -p ~/.kube 2> /dev/null
+  sudo k3s kubectl config view --raw > "$KUBECONFIG"
+  chmod 600 "$KUBECONFIG"
+'';
+
+  # Podman Virtualization
   virtualisation = {
     podman = {
       enable = true;
@@ -202,6 +221,7 @@ in
     };
   };
 
+  # System Fonts
 	fonts = {
 	    fonts = with pkgs; [
 	      noto-fonts
