@@ -3,66 +3,15 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 { config, pkgs, ... }:
-let
-	home-manager = builtins.fetchTarball "https://github.com/nix-community/home-manager/archive/release-23.05.tar.gz";
-  p10kTheme = /home/blackstar/.p10k.zsh;
-in
+
 {
 	imports =
 		[ # Include the results of the hardware scan.
 			./hardware-configuration.nix
-			(import "${home-manager}/nixos")
-      ./nix-alien.nix
+      <home-manager/nixos>
 		];
 		
-		home-manager.users.blackstar = {
-		/* The home.stateVersion option does not have a default and must be set */
-		home.stateVersion = "18.09";
-    /* Here goes the rest of your home-manager config, e.g. home.packages = [ pkgs.foo ]; */
-
-    programs.zsh = {
-				enable = true;
-				shellAliases = {
-					ll = "ls -l";
-					update = "sudo nixos-rebuild switch";
-				};
-				history = {
-					size = 10000;
-					path = "~/.local/share/zsh/history";
-        };
-        initExtra = ''
-          [[ ! -f ${p10kTheme} ]] || source ${p10kTheme}
-					if type neofetch > /dev/null; then
-   						 neofetch
- 				  fi
-   		  '';
-				zplug = {
-					enable = true;
-					plugins = [
-						{ name = "zsh-users/zsh-autosuggestions"; } # Simple plugin installation
-						{ name = "romkatv/powerlevel10k"; tags = [ as:theme depth:1 ]; } # Installations with additional options. For the list of options, please refer to Zplug README.
-						{ name = "zdharma/fast-syntax-highlighting"; }
-					];
-        };
-
-			};
-
-			programs.git = {
-				enable = true;
-				userName  = "mburuwarui";
-				userEmail = "mburuwarui@gmail.com";
-			};
-	
-      # enable prisma dev environment using flakes   
-      programs.direnv = {
-        enable = true;
-        enableZshIntegration = true; # see note on other shells below
-        nix-direnv.enable = true;
-      };
-
-		};
-
-
+		
 	# Bootloader.
 	boot.loader.systemd-boot.enable = true;
 	boot.loader.efi.canTouchEfiVariables = true;
@@ -123,54 +72,39 @@ in
 	users.users.blackstar = {
 		isNormalUser = true;
 		description = "Blackstar";
-		extraGroups = [ "networkmanager" "wheel" "docker" ];
+		extraGroups = [ "networkmanager" "wheel" "podman" ];
+    # home.file.".kube".owner = "blackstar";
 		packages = with pkgs; [
 			firefox
 		#  thunderbird
 		];
 	};
 
+  # Define home-manager
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    users.blackstar = import /home/blackstar/.config/home-manager/home.nix;
+  };
+
 	# Allow unfree packages
 	nixpkgs.config.allowUnfree = true;
 
 	nixpkgs.config.permittedInsecurePackages = [
-                "openssl-1.1.1u"
                 "python-2.7.18.6"
               ];
 
 	# List packages installed in system profile. To search, run:
 	# $ nix search wget
-	environment.systemPackages = (with pkgs; [
+	environment.systemPackages = with pkgs; [
 		vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-		wget
-		curl
-		git
-    gh
-		neovim
-		zsh
-		zplug
-		neofetch
-		nodejs_20
-		nodePackages_latest.pnpm		
-		xclip
-		fontconfig
+    home-manager
+    wget
+    # k3s
+    # kubernetes-helm
     ntfs3g
-    ripgrep
-    gcc
-    k3s
-    k9s
-    unzip
-    openssl
-    direnv
-    rustup
-    just
-    podman-tui
-    obsidian
-]) ++ (with pkgs.gnomeExtensions; [
-    blur-my-shell
-    vitals
-    openweather
-  ]);
+		
+  ];
 
 	# Some programs need SUID wrappers, can be configured further or are
 	# started in user sessions.
@@ -185,25 +119,31 @@ in
 	programs.zsh.enable = true;
   users.defaultUserShell = pkgs.zsh;
   environment.variables.EDITOR = "nvim";
+  environment.variables.TERMINAL = "alacritty";
 
   # Kubernetes k3s
   # This is required so that pod can reach the API server (running on port 6443 by default)
-  networking.firewall.allowedTCPPorts = [ 6443 ];
-  services.k3s.enable = true;
-  services.k3s.role = "server";
-  services.k3s.extraFlags = toString [
-    # "--kubelet-arg=v=4" # Optionally add additional args to k3s
-  ];
+  # networking.firewall.allowedTCPPorts = [ 
+  # 6443 
+  # 30779
+  # 30776
+  # 30778
+  # ];
+  # services.k3s.enable = true;
+  # services.k3s.role = "server";
+  # services.k3s.extraFlags = toString [
+  #   # "--kubelet-arg=v=4" # Optionally add additional args to k3s
+  # ];
   # Required by the network policy controller. 
-  systemd.services.k3s.path = [ pkgs.ipset ];
+  # systemd.services.k3s.path = [ pkgs.ipset ];
 
   # Export KUBECONFIG for K9s
-  environment.etc."profile".text = ''
-  export KUBECONFIG=~/.kube/config
-  mkdir -p ~/.kube 2> /dev/null
-  sudo k3s kubectl config view --raw > "$KUBECONFIG"
-  chmod 600 "$KUBECONFIG"
-'';
+#   environment.etc."profile".text = ''
+#   export KUBECONFIG=~/.kube/config
+#   mkdir -p ~/.kube 2> /dev/null
+#   sudo k3s kubectl config view --raw > "$KUBECONFIG"
+#   chmod 600 "$KUBECONFIG"
+# '';
 
   # Podman Virtualization
   virtualisation = {
@@ -219,6 +159,7 @@ in
       #defaultNetwork.settings = {
       #  dns_enabled = true;
       #};
+      extraPackages = [ pkgs.zfs ];
     };
   };
 
@@ -229,17 +170,17 @@ in
 	      noto-fonts-cjk
 	      noto-fonts-emoji
 	      font-awesome
-	      source-han-sans
-	      source-han-sans-japanese
-	      source-han-serif-japanese
+	      # source-han-sans
+	      # source-han-sans-japanese
+	      # source-han-serif-japanese
 	      (nerdfonts.override { fonts = [ "Meslo" ]; })
 	    ];
 	    fontconfig = {
 	      enable = true;
 	      defaultFonts = {
 		      monospace = [ "Meslo LG M Regular Nerd Font Complete Mono" ];
-		      serif = [ "Noto Serif" "Source Han Serif" ];
-		      sansSerif = [ "Noto Sans" "Source Han Sans" ];
+		      serif = [ "Noto Serif" ];
+		      sansSerif = [ "Noto Sans" ];
 	      };
 	    };
 	};
@@ -254,9 +195,9 @@ in
 	# networking.firewall.enable = false;
 
   # system auto-upgrade
-  system.autoUpgrade.enable = true;  
-  system.autoUpgrade.allowReboot = true; 
-  system.autoUpgrade.channel = "https://channels.nixos.org/nixos-23.05";
+  # system.autoUpgrade.enable = true;  
+  # system.autoUpgrade.allowReboot = true; 
+  # system.autoUpgrade.channel = "https://channels.nixos.org/nixos-23.05";
 
 	# This value determines the NixOS release from which the default
 	# settings for stateful data, like file locations and database versions
