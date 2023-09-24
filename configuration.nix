@@ -27,9 +27,7 @@
 	networking.networkmanager.enable = true;
 
 	# Set your time zone.
-	time.timeZone = "Africa/Nairobi";
-
-	# Select internationalisation properties.
+	time.timeZone = "Africa/Nairobi"; # Select internationalisation properties.
 	i18n.defaultLocale = "en_US.UTF-8";
 
 	# Enable the X11 windowing system.
@@ -90,9 +88,18 @@
 	# Allow unfree packages
 	nixpkgs.config.allowUnfree = true;
 
+  # Create an alias for the unstable channel
+  nixpkgs.config.packageOverrides = pkgs: {
+    unstable = import <unstable> { # pass the nixpkgs config to the unstable alias # to ensure `allowUnfree = true;` is propagated:
+      config = config.nixpkgs.config;
+    };
+  };
+
 	nixpkgs.config.permittedInsecurePackages = [
-                "python-2.7.18.6"
-              ];
+    "python-2.7.18.6"
+  ];
+
+  
 
 	# List packages installed in system profile. To search, run:
 	# $ nix search wget
@@ -103,6 +110,10 @@
     # k3s
     # kubernetes-helm
     ntfs3g
+    # unstable.fastfetch
+    unstable.turso-cli
+    unstable.bun
+    unstable.nodePackages_latest.pnpm
 		
   ];
 
@@ -116,6 +127,7 @@
 
 	# List services that you want to enable:
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  # programs.hyprland.enable = true;
 	programs.zsh.enable = true;
   users.defaultUserShell = pkgs.zsh;
   environment.variables.EDITOR = "nvim";
@@ -192,12 +204,11 @@
 	# networking.firewall.allowedTCPPorts = [ ... ];
 	# networking.firewall.allowedUDPPorts = [ ... ];
 	# Or disable the firewall altogether.
-	# networking.firewall.enable = false;
-
+	# networking.firewall.enable = false
   # system auto-upgrade
-  # system.autoUpgrade.enable = true;  
-  # system.autoUpgrade.allowReboot = true; 
-  # system.autoUpgrade.channel = "https://channels.nixos.org/nixos-23.05";
+  system.autoUpgrade.enable = true;  
+  system.autoUpgrade.allowReboot = true; 
+  system.autoUpgrade.channel = "https://channels.nixos.org/nixos-unstable";
 
 	# This value determines the NixOS release from which the default
 	# settings for stateful data, like file locations and database versions
